@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html ng-app="MainModule">
+
+  <head>
+    <meta charset="utf-8" />
+    <title>Angular Image Annotation Demo</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://code.angularjs.org/1.4.12/angular.js" data-semver="1.4.9" data-require="angular.js@1.4.x"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script src="app.js"></script>
+    <script src="angular.image.annotation.js"></script>
+  </head>
+
+  <body ng-controller="MainCtrl">
+    
+   <div>
+     <p>Hello {{name}}</p>
+   </div>
+
+   
+    <button class="btn btn-default btn-sm" ng-click="draw();"><span ng-if="!drawingMode">add</span><span ng-if="drawingMode">adding...</span></button>
+    <button class="btn btn-default btn-sm" ng-if="!editMode" ng-click="edit(true);">edit</button>
+    <button class="btn btn-default btn-sm" ng-if="editMode" ng-click="edit(false);">stop edit</button>
+    
+   		
+    <div style="width: 500px; height: 600px; overflow: auto;">
+      <img angular-image-annotation notes="notes" api="angularImageAnnotationApi" read-only="true?" process-new-note="processNewNote(note)" delete-note="deleteNote(index)" 
+      src="https://images.template.net/wp-content/uploads/2016/02/11055750/Doctor-Office-Generic-Fax-Cover-Sheet-Template-Word-Doc.jpg" alt="pic"/> 
+    </div>
+ </body>
+
+</html>
