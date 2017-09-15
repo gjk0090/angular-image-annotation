@@ -49,7 +49,7 @@ angular.module( 'angularImageAnnotaionModule', [] ).directive('angularImageAnnot
         return false;
       }
 
-      //copy $timeoutnotes to avoid directly modifying original object
+      //copy notes to avoid directly modifying original object
       scope.localNotes = angular.copy(scope.notes||[]);
       scope.$watch('notes.length', function(value) {
         scope.localNotes = angular.copy(scope.notes||[]);
@@ -72,7 +72,7 @@ angular.module( 'angularImageAnnotaionModule', [] ).directive('angularImageAnnot
         +'ng-style="{\'left\':tempNote.left+\'px\',\'top\':tempNote.top+\'px\',\'width\':tempNote.width+\'px\',\'height\':tempNote.height+\'px\'}"></div>'
       +'</div>';
 
-      (function() {       
+      $timeout(function() {       
 	      elem.after($compile(template)(scope));      
       });
 
