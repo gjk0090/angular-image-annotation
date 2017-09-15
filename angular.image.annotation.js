@@ -28,7 +28,7 @@
 
 'use strict';
 
-angular.module( 'angularImageAnnotaionModule', [] ).directive('angularImageAnnotation',function($compile){
+angular.module( 'angularImageAnnotaionModule', [] ).directive('angularImageAnnotation',function($compile, $timeout){
   
   return {
     restrict: 'A',
@@ -49,7 +49,7 @@ angular.module( 'angularImageAnnotaionModule', [] ).directive('angularImageAnnot
         return false;
       }
 
-      //copy notes to avoid directly modifying original object
+      //copy $timeoutnotes to avoid directly modifying original object
       scope.localNotes = angular.copy(scope.notes||[]);
       scope.$watch('notes.length', function(value) {
         scope.localNotes = angular.copy(scope.notes||[]);
@@ -71,7 +71,10 @@ angular.module( 'angularImageAnnotaionModule', [] ).directive('angularImageAnnot
         +'<div style="position:absolute; background-color:yellow; opacity:0.5;" ng-if="tempNote" '
         +'ng-style="{\'left\':tempNote.left+\'px\',\'top\':tempNote.top+\'px\',\'width\':tempNote.width+\'px\',\'height\':tempNote.height+\'px\'}"></div>'
       +'</div>';
-      elem.after($compile(template)(scope));
+
+      (function() {       
+	      elem.after($compile(template)(scope));      
+      });
 
       scope.draw = function(){
         
