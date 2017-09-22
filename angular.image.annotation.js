@@ -1,7 +1,7 @@
 /*
 	Angular Image Annotation version 1.0.0
 	Junkai Gao 2017
-	http://github.com/??????
+	https://github.com/gjk0090/angular-image-annotation
 	This AngularJS module provides a directive which allows user to highlight area of interest in an image.
 
 	[attribute]
@@ -28,17 +28,17 @@
 
 'use strict';
 
-angular.module( 'angularImageAnnotaionModule', [] ).directive('angularImageAnnotation',function($compile){
+angular.module( 'angularImageAnnotaionModule', [] ).directive('angularImageAnnotation',function($compile, $timeout){
   
   return {
     restrict: 'A',
     scope: {
       src: '@',
       notes: '=',
-      readOnly: '@',
       api: '=',
       externalProcessNewNote: '&processNewNote',
-      externalDeleteNote: '&deleteNote'
+      externalDeleteNote: '&deleteNote',
+      externalSelectNote: '&selectNote'
     },
     //replace:true,
     //templateUrl: 'template.html',
@@ -55,27 +55,31 @@ angular.module( 'angularImageAnnotaionModule', [] ).directive('angularImageAnnot
         scope.localNotes = angular.copy(scope.notes||[]);
       });
       
-      //hide <img> and append <div> with same image as backgrond
-      //should this be done in compile()?
-      scope.width = elem[0].clientWidth || 1000;
-      scope.height = elem[0].clientHeight || 1000;
-      elem.css('display', "none");
+      $timeout(function() {
+	      //hide <img> and append <div> with same image as backgrond
+	      //should this be done in compile()?
+	      scope.width = elem[0].clientWidth || 1000;
+	      scope.height = elem[0].clientHeight || 1000;
+	      elem.css('display', "none");
+	      
+	      var template = 
+	      '<div id="angularImageAnnotationCanvas" style="position:relative; border:solid 1px black; background-image: url(\'{{src}}\');" ng-style="{\'width\':width+\'px\',\'height\':height+\'px\'}">'
+	        +'<div ng-repeat="note in localNotes">'
+	          +'<div style="border:solid 1px blue; position:absolute;" ng-style="getNoteStyle($index, note.id, note)" >'
+	            +'<span style="font-size: 14px;">{{note.id}}</span>'
+	            +'<button class="btn btn-default btn-danger btn-xs pull-right" style="z-index:1; position:relative;" ng-if="editMode" ng-click="deleteNote($index, note.id, note);">delete</button>'
+	            +'<button class="btn btn-default btn-success btn-xs pull-right" style="z-index:1; position:relative;" ng-click="selectNote($index, note.id, note);">select</button>'
+	          +'</div>'
+	        +'</div>'
+	        +'<div style="position:absolute; background-color:yellow; opacity:0.5;" ng-if="tempNote" '
+	        +'ng-style="{left:tempNote.left+\'px\',top:tempNote.top+\'px\',width:tempNote.width+\'px\',height:tempNote.height+\'px\'}"></div>'
+	      +'</div>';
       
-      var template = 
-      '<div id="angularImageAnnotationCanvas" style="position:relative; background-image: url(\'{{src}}\');" ng-style="{\'width\':width+\'px\',\'height\':height+\'px\'}">'
-        +'<div ng-repeat="note in localNotes">'
-          +'<div style="border:solid 1px blue; position:absolute;" ng-style="{\'left\':note.left+\'px\',\'top\':note.top+\'px\',\'width\':note.width+\'px\',\'height\':note.height+\'px\'}">'
-            +'<button class="btn btn-default btn-xs pull-right" style="z-index:1; position:relative;" ng-if="editMode" ng-click="deleteNote($index, note.id);">delete</button>'
-          +'</div>'
-        +'</div>'
-        +'<div style="position:absolute; background-color:yellow; opacity:0.5;" ng-if="tempNote" '
-        +'ng-style="{\'left\':tempNote.left+\'px\',\'top\':tempNote.top+\'px\',\'width\':tempNote.width+\'px\',\'height\':tempNote.height+\'px\'}"></div>'
-      +'</div>';
-      elem.after($compile(template)(scope));
 
+    	  elem.after($compile(template)(scope));
+      });
+      
       scope.draw = function(){
-        
-        if(scope.readOnly=='true'){return false;}
         
         scope.canvas = document.getElementById('angularImageAnnotationCanvas');
         
@@ -96,15 +100,13 @@ angular.module( 'angularImageAnnotaionModule', [] ).directive('angularImageAnnot
       };
       
       scope.edit = function(bool){
-        
-        if(scope.readOnly=='true'){return false;}
-        
+
         scope.editMode=bool;
         
         scope.canvas.removeEventListener('mousedown', scope.handleMouseDown, false);
       }
       
-      scope.deleteNote=function(index, noteID){
+      scope.deleteNote=function(index, noteID, note){
         //scope.localNotes.splice(index,1);
         if(scope.externalDeleteNote){
           scope.externalDeleteNote({index:index, id:noteID});
@@ -113,15 +115,29 @@ angular.module( 'angularImageAnnotaionModule', [] ).directive('angularImageAnnot
         }
       }
   
+      scope.selectNote=function(index, noteID, note){
+        scope.selectedNoteIndex = index;
+        if(scope.externalSelectNote){
+          scope.externalSelectNote({index:index, id:noteID, note:note});
+        }else{
+          //todo: show error somewhere
+        }
+      }
+
       //methods exposed to elem's scope
       scope.api={
         draw:scope.draw,
         edit:scope.edit
       };
       
+      
+      scope.getNoteStyle = function(index, noteID, note){
+        var style = {left:note.left+'px',top:note.top+'px',width:note.width+'px',height:note.height+'px'};
+        style.border = (scope.selectedNoteIndex === index)? 'solid 6px yellow' : 'solid 1px blue';
+        return style;
+      }
 
       //methods for image annotating
-      //code took from stackoverflow:
       //https://stackoverflow.com/questions/43956540/receiving-the-coordinates-of-a-mouse-drag
       scope.handleMouseDown=function(e) {
         var mousePos = scope.getMousePosition(scope.canvas, e);
@@ -159,6 +175,7 @@ angular.module( 'angularImageAnnotaionModule', [] ).directive('angularImageAnnot
         scope.canvas.removeEventListener('mousemove', scope.handleMouseMove, false);
         
         var newNote = {
+          id:Math.round(Math.random()*10000000000)+"",
           left:scope.endPoint.left>scope.startPoint.left?scope.startPoint.left:scope.endPoint.left,
           top:scope.endPoint.top>scope.startPoint.top?scope.startPoint.top:scope.endPoint.top,
           width:scope.endPoint.left>scope.startPoint.left?(scope.endPoint.left-scope.startPoint.left):(scope.startPoint.left-scope.endPoint.left),
@@ -184,8 +201,8 @@ angular.module( 'angularImageAnnotaionModule', [] ).directive('angularImageAnnot
         
         //additional logic for css zoom property
         if(scope.zoom){
-          left=left/scope.zoom;
-          top=top/scope.zoom;
+          left=Math.round(left/scope.zoom);
+          top=Math.round(top/scope.zoom);
         }
         
         return {
